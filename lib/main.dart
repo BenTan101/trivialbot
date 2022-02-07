@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:trivial_bot/word_button.dart';
 import 'package:trivial_bot/word_controller.dart';
@@ -113,7 +115,7 @@ Future<String> fetchText() async {
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    return response.body;
+    return jsonDecode(response.body)['body'];
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
