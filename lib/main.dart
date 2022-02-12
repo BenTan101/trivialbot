@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:trivial_bot/stop_words.dart';
 import 'package:trivial_bot/word_button.dart';
+
+import 'globals.dart';
 
 // void main() async {
 //   // Firebase initialisation.
@@ -47,6 +48,7 @@ class _MyAppState extends State<MyApp> {
         pageBuilder: (_, __, ___) => const MyApp(),
       ),
     );
+    stringList.clear();
   }
 
   @override
@@ -99,7 +101,10 @@ class _MyAppState extends State<MyApp> {
                               return const CircularProgressIndicator();
                             },
                           ),
-                    const SizedBox(height: 30),
+                    const SizedBox(
+                      height: 30,
+                    ),
+
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:trivial_bot/stop_words.dart';
+import 'package:trivial_bot/globals.dart';
 
 class WordButton extends StatefulWidget {
   final String word;
@@ -25,10 +25,12 @@ class _WordButtonState extends State<WordButton> {
   @override
   Widget build(BuildContext context) {
     return TextButton(
-      onPressed: () {},
+      onPressed: () {
+        stringList.add(word);
+        print(stringList);
+      },
       child: Text(
-        // widget.word,
-        widget.word.replaceAll(RegExp('__________'), ''),
+        word.replaceAll(RegExp('__________'), ''),
         style: TextStyle(
           color: getColor(word, 900),
         ),

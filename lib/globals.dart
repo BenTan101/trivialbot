@@ -1,3 +1,6 @@
+library trivial_bot.globals;
+
+List<String> stringList = [];
 final stopWords = [
   "a",
   "about",
@@ -7,6 +10,7 @@ final stopWords = [
   "against",
   "ain",
   "all",
+  "also", // I added this
   "am",
   "an",
   "and",
