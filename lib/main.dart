@@ -31,12 +31,22 @@ class _MyAppState extends State<MyApp> {
   // boolean to show CircularProgressIndication
   // while Web Scraping awaits
   bool isLoading = false;
-  late Future<String> futureText;
+  late Future<List<String>> futureTextAndTitle;
 
   @override
   void initState() {
     super.initState();
-    futureText = fetchText();
+    futureTextAndTitle = fetchTextAndTitle();
+  }
+
+  void _reset() {
+    Navigator.pushReplacement(
+      context,
+      PageRouteBuilder(
+        transitionDuration: Duration.zero,
+        pageBuilder: (_, __, ___) => const MyApp(),
+      ),
+    );
   }
 
   @override
@@ -54,19 +64,32 @@ class _MyAppState extends State<MyApp> {
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    // if isLoading is true show loader
-                    // else show Column of Texts
                     isLoading
                         ? const CircularProgressIndicator()
-                        : FutureBuilder<String>(
-                            future: futureText,
+                        : FutureBuilder<List<String>>(
+                            future: futureTextAndTitle,
                             builder: (context, snapshot) {
                               if (snapshot.hasData) {
-                                return Wrap(
-                                  children:
-                                      getButtons(sentence: snapshot.data!),
-                                  spacing: 10,
-                                  runSpacing: 10,
+                                return Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    SelectableText(
+                                      snapshot.data![1],
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 30,
+                                      ),
+                                    ),
+                                    const SizedBox(
+                                      height: 10,
+                                    ),
+                                    Wrap(
+                                      children: getButtons(
+                                          sentence: snapshot.data![0]),
+                                      spacing: 10,
+                                      runSpacing: 10,
+                                    ),
+                                  ],
                                 );
                               } else if (snapshot.hasError) {
                                 return Text('${snapshot.error}');
@@ -77,24 +100,48 @@ class _MyAppState extends State<MyApp> {
                             },
                           ),
                     const SizedBox(height: 30),
-                    TextButton(
-                      onPressed: () {},
-                      child: const Text(
-                        'Submit',
-                        style: TextStyle(
-                          color: Colors.white70,
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: _reset,
+                          child: const Text(
+                            'Skip',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.redAccent[200],
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 20,
+                              horizontal: 25,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                         ),
-                      ),
-                      style: TextButton.styleFrom(
-                        backgroundColor: Colors.blueAccent[200],
-                        padding: const EdgeInsets.symmetric(
-                          vertical: 20,
-                          horizontal: 25,
+                        const SizedBox(width: 10),
+                        TextButton(
+                          onPressed: _reset,
+                          child: const Text(
+                            'Submit',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          style: TextButton.styleFrom(
+                            backgroundColor: Colors.blueAccent[200],
+                            padding: const EdgeInsets.symmetric(
+                              vertical: 20,
+                              horizontal: 25,
+                            ),
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
                         ),
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                    ),
+                      ],
+                    )
                   ],
                 ),
               ))),
@@ -103,18 +150,20 @@ class _MyAppState extends State<MyApp> {
 
   getButtons({required String sentence}) {
     // TODO: Stop words (https://gist.github.com/sebleier/554280)
-    var words = sentence.split(' ');
+    sentence = cleanSentence(sentence);
+    var words = sentence.split(RegExp('[\\s,—]+'));
+
+    // return words.map((word) => WordButton(word: word)).toList();
+
     List<String> delimited = [words[0]];
-    var isFirstWordAStopWord = stopWords
-        .contains(words[0].toLowerCase().replaceAll(RegExp('[,.:;]'), ''));
+    var isFirstWordAStopWord = stopWords.contains(words[0]);
     var isStopWord = isFirstWordAStopWord;
     if (isStopWord) {
       delimited.first = "__________${delimited.first}";
     }
 
     for (var word in words.getRange(1, words.length)) {
-      if (stopWords
-          .contains(word.toLowerCase().replaceAll(RegExp('[,.:;]'), ''))) {
+      if (stopWords.contains(word.replaceAll(RegExp('[,.:;]'), ''))) {
         if (isStopWord) {
           delimited.last += ' $word';
           isStopWord = true;
@@ -134,9 +183,20 @@ class _MyAppState extends State<MyApp> {
     }
     return delimited.map((word) => WordButton(word: word)).toList();
   }
+
+  String cleanSentence(String sentence) {
+    sentence = sentence
+        .toLowerCase()
+        .replaceAll('\n', '')
+        .replaceAll('.', '')
+        .replaceAll(RegExp('\\((.*?)\\)'), '')
+        .replaceAll(RegExp('\\[(.*?)\\]'), '')
+        .replaceAll(RegExp('\\{(.*?)\\}'), '');
+    return sentence;
+  }
 }
 
-Future<String> fetchText() async {
+Future<List<String>> fetchTextAndTitle() async {
   final response = await http.get(
       Uri.parse('https://pythonintegration.redblutac1.repl.co/text'),
       headers: {
@@ -147,7 +207,10 @@ Future<String> fetchText() async {
   if (response.statusCode == 200) {
     // If the server did return a 200 OK response,
     // then parse the JSON.
-    return jsonDecode(response.body)['body']['summary'];
+    return [
+      jsonDecode(response.body)['body']['summary'],
+      jsonDecode(response.body)['body']['title']
+    ];
   } else {
     // If the server did not return a 200 OK response,
     // then throw an exception.
