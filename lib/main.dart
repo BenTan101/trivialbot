@@ -218,7 +218,9 @@ class _MyAppState extends State<MyApp> {
         .replaceAll('&', 'and')
         .replaceAll(RegExp('\\((.*?)\\)'), '')
         .replaceAll(RegExp('\\[(.*?)\\]'), '')
-        .replaceAll(RegExp('\\{(.*?)\\}'), '');
+        .replaceAll(RegExp('\\{(.*?)\\}'), '')
+        .replaceAll(RegExp('\\s\\s+/g'), ' ')
+        .trim();
     return thing;
   }
 
