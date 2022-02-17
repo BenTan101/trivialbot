@@ -33,6 +33,8 @@ class _MyAppState extends State<MyApp> {
   // while Web Scraping awaits
   bool isLoading = false;
   late Future<List<String>> futureTextAndTitle;
+  late String text;
+  late String title;
 
   @override
   void initState() {
@@ -104,7 +106,6 @@ class _MyAppState extends State<MyApp> {
                     const SizedBox(
                       height: 30,
                     ),
-
                     Row(
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
@@ -154,26 +155,42 @@ class _MyAppState extends State<MyApp> {
   }
 
   getButtons({required String sentence}) {
+    sentence = cleanThing(sentence);
+    title = cleanThing(title);
+
+    if (sentence.contains(title)) {
+      sentence = sentence.replaceAll(title, '__${title.replaceAll(' ', '__')}');
+    }
+
+    print('TITLE: $title');
+    print('SENTENCE: $sentence');
+
     // TODO: Stop words (https://gist.github.com/sebleier/554280)
-    sentence = cleanSentence(sentence);
     var words = sentence.split(RegExp('[\\s,—]+'));
 
     // return words.map((word) => WordButton(word: word)).toList();
 
     List<String> delimited = [words[0]];
-    var isFirstWordAStopWord = stopWords.contains(words[0]);
+    var isFirstWordAStopWord =
+        stopWords.contains(words[0].replaceAll(RegExp('["\',.:;]'), ''));
     var isStopWord = isFirstWordAStopWord;
     if (isStopWord) {
-      delimited.first = "__________${delimited.first}";
+      delimited.first = "_stop_${delimited.first}";
     }
 
     for (var word in words.getRange(1, words.length)) {
-      if (stopWords.contains(word.replaceAll(RegExp('[,.:;]'), ''))) {
+      if (word.contains('__')) {
+        delimited.add(word);
+      } else if (stopWords.contains(word.replaceAll(RegExp('["\',.:;]'), ''))) {
         if (isStopWord) {
-          delimited.last += ' $word';
+          if (delimited.last.contains('__')) {
+            delimited.add('_stop_$word');
+          } else {
+            delimited.last += ' $word';
+          }
           isStopWord = true;
         } else {
-          delimited.add('__________$word');
+          delimited.add('_stop_$word');
           isStopWord = true;
         }
       } else {
@@ -181,7 +198,11 @@ class _MyAppState extends State<MyApp> {
           delimited.add(word);
           isStopWord = false;
         } else {
-          delimited.last += ' $word';
+          if (delimited.last.contains('__')) {
+            delimited.add(word);
+          } else {
+            delimited.last += ' $word';
+          }
           isStopWord = false;
         }
       }
@@ -189,36 +210,38 @@ class _MyAppState extends State<MyApp> {
     return delimited.map((word) => WordButton(word: word)).toList();
   }
 
-  String cleanSentence(String sentence) {
-    sentence = sentence
+  String cleanThing(String thing) {
+    thing = thing
         .toLowerCase()
         .replaceAll('\n', '')
         .replaceAll('.', '')
+        .replaceAll('&', 'and')
         .replaceAll(RegExp('\\((.*?)\\)'), '')
         .replaceAll(RegExp('\\[(.*?)\\]'), '')
         .replaceAll(RegExp('\\{(.*?)\\}'), '');
-    return sentence;
+    return thing;
   }
-}
 
-Future<List<String>> fetchTextAndTitle() async {
-  final response = await http.get(
-      Uri.parse('https://pythonintegration.redblutac1.repl.co/text'),
-      headers: {
-        "Accept": "application/json",
-        "Access-Control-Allow-Origin": "*"
-      });
+  Future<List<String>> fetchTextAndTitle() async {
+    final response = await http.get(
+        Uri.parse('https://pythonintegration.redblutac1.repl.co/text'),
+        headers: {
+          "Accept": "application/json",
+          "Access-Control-Allow-Origin": "*"
+        });
 
-  if (response.statusCode == 200) {
-    // If the server did return a 200 OK response,
-    // then parse the JSON.
-    return [
-      jsonDecode(response.body)['body']['summary'],
-      jsonDecode(response.body)['body']['title']
-    ];
-  } else {
-    // If the server did not return a 200 OK response,
-    // then throw an exception.
-    throw Exception('Failed to load text');
+    if (response.statusCode == 200) {
+      // If the server did return a 200 OK response,
+      // then parse the JSON.
+
+      text = jsonDecode(response.body)['body']['summary'];
+      title = jsonDecode(response.body)['body']['title'];
+
+      return [text, title];
+    } else {
+      // If the server did not return a 200 OK response,
+      // then throw an exception.
+      throw Exception('Failed to load text');
+    }
   }
 }

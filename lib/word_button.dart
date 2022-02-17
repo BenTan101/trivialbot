@@ -13,13 +13,15 @@ class WordButton extends StatefulWidget {
 class _WordButtonState extends State<WordButton> {
   String word = '';
   late bool isStopWord;
+  late bool isTitle;
 
   @override
   void initState() {
     super.initState();
     word = widget.word;
     // isStopWord = stopWords.contains(word);
-    isStopWord = word.contains('__________');
+    isStopWord = word.contains('_stop_');
+    isTitle = word.contains('__');
   }
 
   @override
@@ -30,7 +32,9 @@ class _WordButtonState extends State<WordButton> {
         print(stringList);
       },
       child: Text(
-        word.replaceAll(RegExp('__________'), ''),
+        word.contains('__')
+            ? word.replaceAll('__', ' ').substring(1)
+            : word.replaceAll(RegExp('_stop_'), ''),
         style: TextStyle(
           color: getColor(word, 900),
         ),
@@ -47,6 +51,8 @@ class _WordButtonState extends State<WordButton> {
   getColor(String word, int i) {
     if (isStopWord) {
       return Colors.grey[i];
+    } else if (isTitle) {
+      return Colors.green[i];
     } else {
       return Colors.blue[i];
     }
