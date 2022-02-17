@@ -14,6 +14,7 @@ class _WordButtonState extends State<WordButton> {
   String word = '';
   late bool isStopWord;
   late bool isTitle;
+  bool _hasBeenPressed = false;
 
   @override
   void initState() {
@@ -28,8 +29,13 @@ class _WordButtonState extends State<WordButton> {
   Widget build(BuildContext context) {
     return TextButton(
       onPressed: () {
-        stringList.add(word);
-        print(stringList);
+        if (!isStopWord & !isTitle) {
+          stringList.add(word);
+          print(stringList);
+          setState(() {
+            _hasBeenPressed = true;
+          });
+        }
       },
       child: Text(
         word.contains('__')
@@ -40,7 +46,7 @@ class _WordButtonState extends State<WordButton> {
         ),
       ),
       style: TextButton.styleFrom(
-        backgroundColor: getColor(word, 200),
+        backgroundColor: _hasBeenPressed ? getColor(word, 500) : getColor(word, 200),
         minimumSize: Size.zero,
         padding: const EdgeInsets.all(15),
         tapTargetSize: MaterialTapTargetSize.shrinkWrap,
