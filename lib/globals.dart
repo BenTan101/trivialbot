@@ -1,6 +1,7 @@
 library trivial_bot.globals;
 
 List<String> stringList = [];
+
 final stopWords = [
   "a",
   "about",

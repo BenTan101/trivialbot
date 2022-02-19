@@ -1,25 +1,41 @@
 import 'dart:convert';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:trivial_bot/word_button.dart';
 
 import 'globals.dart';
 
-// void main() async {
-//   // Firebase initialisation.
-//   WidgetsFlutterBinding.ensureInitialized();
-//   await FirebaseAuth.instance.signInAnonymously();
-//   await Firebase.initializeApp();
-//
-//   runApp(const MyApp());
-// }
+void main() async {
+  // Firebase initialisation.
+  WidgetsFlutterBinding.ensureInitialized();
+  await Firebase.initializeApp(
+    options: const FirebaseOptions(
+        apiKey: "AIzaSyB_EaR5_n-w3JW4yjhc50kkyjGLxnKZShw",
+        authDomain: "trivial-bot-4.firebaseapp.com",
+        databaseURL:
+            "https://trivial-bot-4-default-rtdb.asia-southeast1.firebasedatabase.app",
+        projectId: "trivial-bot-4",
+        storageBucket: "trivial-bot-4.appspot.com",
+        messagingSenderId: "680830530835",
+        appId: "1:680830530835:web:1e013e356ba838d73616e6",
+        measurementId: "G-G4T7PSGY4Y"),
+  );
 
-void main() => runApp(MaterialApp(
-    theme: ThemeData(
-      scaffoldBackgroundColor: Colors.blue[100],
-    ),
-    home: const MyApp()));
+  runApp(MaterialApp(
+      theme: ThemeData(
+        scaffoldBackgroundColor: Colors.blue[100],
+      ),
+      home: const MyApp()));
+}
+
+// void main() => runApp(MaterialApp(
+//     theme: ThemeData(
+//       scaffoldBackgroundColor: Colors.blue[100],
+//     ),
+//     home: const MyApp()));
 
 class MyApp extends StatefulWidget {
   const MyApp({Key? key}) : super(key: key);
@@ -35,14 +51,17 @@ class _MyAppState extends State<MyApp> {
   late Future<List<String>> futureTextAndTitle;
   late String text;
   late String title;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  late final CollectionReference _mainCollection;
 
   @override
   void initState() {
     super.initState();
     futureTextAndTitle = fetchTextAndTitle();
+    _mainCollection = _firestore.collection('data');
   }
 
-  void _reset() {
+  void _cancel() {
     Navigator.pushReplacement(
       context,
       PageRouteBuilder(
@@ -51,6 +70,23 @@ class _MyAppState extends State<MyApp> {
       ),
     );
     stringList.clear();
+  }
+
+  Future<void> _submit(String title, String sentence, List<String> keys) async {
+    DocumentReference documentReferencer = _mainCollection.doc();
+
+    Map<String, dynamic> data = <String, dynamic>{
+      "title": title,
+      "sentence": sentence,
+      "keys": keys,
+    };
+
+    await documentReferencer
+        .set(data)
+        .whenComplete(() => print("Notes item added to the database"))
+        .catchError((e) => print(e));
+
+    _cancel();
   }
 
   @override
@@ -89,7 +125,8 @@ class _MyAppState extends State<MyApp> {
                                     ),
                                     Wrap(
                                       children: getButtons(
-                                          sentence: snapshot.data![0]),
+                                          sentence: snapshot.data![0],
+                                      ),
                                       spacing: 10,
                                       runSpacing: 10,
                                     ),
@@ -110,7 +147,7 @@ class _MyAppState extends State<MyApp> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         TextButton(
-                          onPressed: _reset,
+                          onPressed: _cancel,
                           child: const Text(
                             'Skip',
                             style: TextStyle(
@@ -129,7 +166,7 @@ class _MyAppState extends State<MyApp> {
                         ),
                         const SizedBox(width: 10),
                         TextButton(
-                          onPressed: _reset,
+                          onPressed: () => _submit(title, text, stringList),
                           child: const Text(
                             'Submit',
                             style: TextStyle(
@@ -156,6 +193,7 @@ class _MyAppState extends State<MyApp> {
 
   getButtons({required String sentence}) {
     sentence = cleanThing(sentence);
+    text = sentence;
     title = cleanThing(title);
 
     if (sentence.contains(title)) {
