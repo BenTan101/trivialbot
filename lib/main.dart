@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:collection/src/iterable_extensions.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -70,15 +71,34 @@ class _MyAppState extends State<MyApp> {
       ),
     );
     stringList.clear();
+    positionList.clear();
   }
 
-  Future<void> _submit(String title, String sentence, List<String> keys) async {
+  Future<void> _submit() async {
     DocumentReference documentReferencer = _mainCollection.doc();
+    List<String> phraseList = [];
 
+    positionList.sort();
+
+    for (var p = 0; p < positionList.length; p++) {
+      if (p == 0) {
+        phraseList.add(stringList.getRange(0, positionList[p] + 1).join(' '));
+      } else {
+        phraseList.add(stringList
+            .getRange(positionList[p - 1] + 1, positionList[p] + 1)
+            .join(' '));
+      }
+    }
+
+    phraseList.add(stringList
+        .getRange(positionList.last + 1, stringList.length)
+        .join(' '));
+
+    print(phraseList);
     Map<String, dynamic> data = <String, dynamic>{
       "title": title,
-      "sentence": sentence,
-      "keys": keys,
+      "sentence": text,
+      "keys": phraseList,
     };
 
     await documentReferencer
@@ -125,9 +145,8 @@ class _MyAppState extends State<MyApp> {
                                     ),
                                     Wrap(
                                       children: getButtons(
-                                          sentence: snapshot.data![0],
+                                        sentence: snapshot.data![0],
                                       ),
-                                      spacing: 10,
                                       runSpacing: 10,
                                     ),
                                   ],
@@ -166,7 +185,7 @@ class _MyAppState extends State<MyApp> {
                         ),
                         const SizedBox(width: 10),
                         TextButton(
-                          onPressed: () => _submit(title, text, stringList),
+                          onPressed: () => _submit(),
                           child: const Text(
                             'Submit',
                             style: TextStyle(
@@ -192,9 +211,15 @@ class _MyAppState extends State<MyApp> {
   }
 
   getButtons({required String sentence}) {
-    sentence = cleanThing(sentence);
-    text = sentence;
     title = cleanThing(title);
+    text = cleanThing(sentence);
+
+    stringList = text.split(RegExp('[\\s,—]+'));
+    print(stringList);
+    return stringList
+        .mapIndexed(
+            (position, word) => WordButton(word: word, position: position))
+        .toList();
 
     if (sentence.contains(title)) {
       sentence = sentence.replaceAll(title, '__${title.replaceAll(' ', '__')}');
@@ -245,7 +270,7 @@ class _MyAppState extends State<MyApp> {
         }
       }
     }
-    return delimited.map((word) => WordButton(word: word)).toList();
+    // return delimited.map((word) => WordButton(word: word)).toList();
   }
 
   String cleanThing(String thing) {
@@ -257,6 +282,10 @@ class _MyAppState extends State<MyApp> {
         .replaceAll(RegExp('\\((.*?)\\)'), '')
         .replaceAll(RegExp('\\[(.*?)\\]'), '')
         .replaceAll(RegExp('\\{(.*?)\\}'), '')
+        .replaceAll(RegExp('\\((.*?)'), '')
+        .replaceAll(RegExp('\\[(.*?)'), '')
+        .replaceAll(RegExp('\\{(.*?)'), '')
+        .replaceAll(RegExp('["\',.:;?!]'), '')
         .replaceAll(RegExp('\\s\\s+/g'), ' ')
         .trim();
     return thing;
