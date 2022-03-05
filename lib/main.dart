@@ -106,6 +106,7 @@ class _MyAppState extends State<MyApp> {
         .whenComplete(() => print("Notes item added to the database"))
         .catchError((e) => print(e));
 
+    counter++;
     _cancel();
   }
 
@@ -200,6 +201,20 @@ class _MyAppState extends State<MyApp> {
                               horizontal: 25,
                             ),
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(
+                      height: 25,
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        Text(
+                          "You've done $counter! Keep it up!",
+                          style: TextStyle(
+                            fontSize: 40,
                           ),
                         ),
                       ],

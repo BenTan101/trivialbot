@@ -2,6 +2,7 @@ library trivial_bot.globals;
 
 List<String> stringList = [];
 List<int> positionList = [];
+int counter = 0;
 
 final stopWords = [
   "a",
